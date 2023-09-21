@@ -1411,7 +1411,6 @@
     <None Include="Schema-Model\dbo\Tables\table_record.sql" />
     <None Include="Schema-Model\dbo\Tables\TargetProducts.sql" />
     <None Include="Schema-Model\dbo\Tables\test_fields.sql" />
-    <None Include="Schema-Model\dbo\Tables\test_to.sql" />
     <None Include="Schema-Model\dbo\Tables\test_tomas.sql" />
     <None Include="Schema-Model\dbo\Tables\test_valentin.sql" />
     <None Include="Schema-Model\dbo\Tables\think.sql" />
@@ -2327,5 +2326,8 @@
     <None Include="Schema-Model\stage\Tables\WID_FI_Supplier.sql" />
     <None Include="Schema-Model\stage\Tables\WID_FI_SupplierAgreement.sql" />
     <None Include="Schema-Model\stage\Tables\WID_FI_Warehouse.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Migrations\1.1.0-Changes\001_20230921-1512_valentin.astudill.sql" />
   </ItemGroup>
 </Project>
