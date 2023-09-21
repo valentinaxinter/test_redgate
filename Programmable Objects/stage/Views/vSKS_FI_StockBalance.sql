@@ -1,0 +1,62 @@
+IF OBJECT_ID('[stage].[vSKS_FI_StockBalance]') IS NOT NULL
+	DROP VIEW [stage].[vSKS_FI_StockBalance];
+
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+GO
+
+
+/****** Script for SelectTopNRows command from SSMS  ******/
+CREATE VIEW [stage].[vSKS_FI_StockBalance] AS 
+WITH CTE AS (
+SELECT [PartitionKey], [MANDT], [COMPANY], [WAREHOUSECODE], [PARTNUM], [CURRENCY], [DEFAULTBINNUM], [SUPPLIERNUM], [DELIVERYTIME], [STOCKTAKEDATE], [STDCOSTLACAD], [MAXSTOCKQTY], [STOCKBALANCE], [STOCKVALUE], [RESERVEDQTY], [BACKORDERQTY], [ORDEREDQTY], [STOCKTAKDIFF], [REORDERLEVEL], [OPTIMALORDERQTY], [SRES1], [SRES2], [SRES3]
+	  ,CAST(CASE WHEN [WAREHOUSECODE] = 'F251' THEN 'FI25'
+			WHEN [WAREHOUSECODE] = 'F261' THEN 'FI26'
+			WHEN [WAREHOUSECODE] = 'SE10' THEN 'SE10'
+			WHEN [WAREHOUSECODE] = 'F201' THEN 'FI20'
+		ELSE [WAREHOUSECODE] END  AS nvarchar(10)) AS SKSCompCode
+
+  FROM [stage].[SKS_FI_StockBalance]
+  WHERE [WAREHOUSECODE] NOT IN ('FI00','SE10')
+)
+--ADD TRIM()UPPER() INTO PartID,WarehouseID 2022-12-16 VA
+SELECT 
+	  CONVERT([binary](32),HASHBYTES('SHA2_256',CONCAT([Company],'#',TRIM(UPPER([PartNum])),'#',TRIM(UPPER([WarehouseCode]))))) AS ItemWarehouseID
+	  ,CONCAT([Company],'#',TRIM(UPPER([PartNum])),'#',TRIM(UPPER([WarehouseCode]))) AS ItemWarehouseCode
+	  ,CONVERT([binary](32),HASHBYTES('SHA2_256',TRIM([Company]))) AS CompanyID
+	  ,CONVERT([binary](32),HASHBYTES('SHA2_256',CONCAT([Company],'#',TRIM([SupplierNum]), '#', SKSCompCode ))) AS SupplierID
+	  ,CONVERT([binary](32),HASHBYTES('SHA2_256',UPPER(CONCAT(TRIM([Company]),'#',TRIM([PartNum]), '#', TRIM(SKSCompCode))))) AS PartID
+	  --,CONVERT([binary](32),HASHBYTES('SHA2_256',CONCAT([Company],'#',TRIM([PartNum]), '#', SKSCompCode))) AS PartID
+	  ,CONVERT([binary](32),HASHBYTES('SHA2_256',UPPER(CONCAT(TRIM([Company]),'#',TRIM([WarehouseCode]))))) AS WarehouseID
+	  --,CONVERT([binary](32),HASHBYTES('SHA2_256',CONCAT([Company],'#',TRIM(UPPER([WarehouseCode]))))) AS WarehouseID
+	  ,[PartitionKey]
+      
+      ,[WAREHOUSECODE]
+      ,[CURRENCY] 
+	  --,CASE WHEN COMPANY = 'SKSSWE' THEN 'JSESKSSW' ELSE COMPANY END AS Company
+	  ,Company
+      ,[DEFAULTBINNUM] AS BinNum
+	  --,'' AS BatchNum
+	  ,RIGHT(TRIM([PARTNUM]), 7) as PartNum
+	  ,[DELIVERYTIME]	AS DelivTime
+      ,COALESCE(TRY_CONVERT(date,[STOCKTAKEDATE],112),CAST('1900-01-01' AS DATE))	AS LastStockTakeDate
+	  ,COALESCE(TRY_CONVERT(date,[STDCOSTLACAD],112),CAST('1900-01-01' AS DATE))	AS LastStdCostCalDate
+	  ,COALESCE(TRY_CONVERT(decimal, [SRES2]),0)	 AS SafetyStock
+	  ,COALESCE(TRY_CONVERT(decimal, [MAXSTOCKQTY]),0) AS MAXSTOCKQTY
+	  ,[STOCKBALANCE]
+      ,[STOCKVALUE]
+	  ,0 AS AvgCost
+      ,COALESCE(TRY_CONVERT(decimal, [RESERVEDQTY]),0)	AS ReserveQty
+      ,COALESCE(TRY_CONVERT(decimal, [BACKORDERQTY]),0)	AS BackOrderQty
+      ,[ORDEREDQTY]		AS OrderQty
+      ,COALESCE(TRY_CONVERT(decimal, [STOCKTAKDIFF]),0)	AS StockTakeDiff
+      ,COALESCE(TRY_CONVERT(decimal, [REORDERLEVEL]),0)	AS [REORDERLEVEL]
+      ,[OPTIMALORDERQTY]
+	  ,[SUPPLIERNUM]
+      ,[SRES1]			AS SBRes1
+      ,[SRES2]			AS SBRes2
+      ,[SRES3]			AS SBRes3
+  FROM CTE
+GO

@@ -1,0 +1,28 @@
+IF OBJECT_ID('[dm].[DimRLS]') IS NOT NULL
+	DROP VIEW [dm].[DimRLS];
+
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+GO
+
+
+
+CREATE VIEW [dm].[DimRLS] AS
+SELECT 
+ RLS.[id]
+,RLS.[Company]
+,RLS.[Email]
+,RLS.[RLSTable]
+,RLS.[RLSField]
+,RLS.[RLSValue]
+,RLS.[AccessType]
+,RLS.[SourceList]
+,RLS.[Modified_at]
+,RLS.[Author]
+, COMPANY.BusinessArea
+FROM [dw].RLS AS RLS
+	LEFT JOIN DBO.Company AS COMPANY
+		ON RLS.COMPANY = COMPANY.COMPANY
+GO

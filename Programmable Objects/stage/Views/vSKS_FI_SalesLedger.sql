@@ -1,0 +1,50 @@
+IF OBJECT_ID('[stage].[vSKS_FI_SalesLedger]') IS NOT NULL
+	DROP VIEW [stage].[vSKS_FI_SalesLedger];
+
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_NULLS ON
+GO
+
+CREATE VIEW [stage].[vSKS_FI_SalesLedger] AS
+--COMMENT EMPTY FIELDS /ADD UPPER()TRIM()INTO CustomerID 2022-12-16 VA
+SELECT
+	CONVERT([binary](32), HASHBYTES('SHA2_256',UPPER(CONCAT(TRIM([COMPANY]), '#', TRIM(CUSTOMERNUM), '#',TRIM([INVOICENUM]), '#', TRIM(MANDT), '#', TRIM([VKORG]))))) AS SalesLedgerID
+	--CONVERT([binary](32), HASHBYTES('SHA2_256', CONCAT([COMPANY], '#', TRIM(IIF(CUSTOMERNUM IS NULL OR CUSTOMERNUM = '', 'MISSINGCUSTOMER', CUSTOMERNUM)), '#', [INVOICENUM], '#', TRIM(MANDT), '#', TRIM([VKORG])))) AS SalesLedgerID
+	,CONVERT([binary](32), HASHBYTES('SHA2_256', [Company])) AS CompanyID
+	,CONVERT([binary](32), HASHBYTES('SHA2_256', UPPER(CONCAT(TRIM([COMPANY]), '#', TRIM(CUSTOMERNUM), '#', TRIM([VKORG]))))) AS CustomerID
+	--,CONVERT([binary](32), HASHBYTES('SHA2_256', CONCAT([COMPANY], '#', TRIM(IIF(CUSTOMERNUM IS NULL OR CUSTOMERNUM = '', 'MISSINGCUSTOMER', CUSTOMERNUM)), '#', TRIM([VKORG])))) AS CustomerID
+	,CONCAT(Company, '#', TRIM(CUSTOMERNUM), '#', InvoiceNum) AS SalesLedgerCode
+	,PartitionKey
+
+	--,CASE WHEN COMPANY = 'SKSSWE' THEN 'JSESKSSW' ELSE COMPANY END AS Company
+	,Company
+	,TRIM(CUSTOMERNUM) AS CustomerNum
+	,[INVOICENUM] AS SalesInvoiceNum
+	,INVOICEDATE AS SalesInvoiceDate
+	,CASE WHEN [DUEDATE] = '00000000' THEN '19000101' ELSE CAST([DUEDATE] AS Date) END AS SalesDueDate
+	,CASE WHEN [LASTPAYMENTDATE] = '00000000' THEN '19000101' ELSE CAST([LASTPAYMENTDATE] AS Date) END AS SalesLastPaymentDate
+	--,NULL AS InvoiceAmount
+	--,NULL AS PaidInvoiceAmount
+	--,NULL AS RemainingInvoiceAmount
+	,1 AS ExchangeRate
+	,'EUR' AS Currency
+	--,NULL AS VATAmount
+	--,'' AS VATCode
+	--,'' AS PayToName
+	--,'' AS PayToCity
+	--,'' AS PayToContact
+	--,'' AS PaymentTerms
+	,TRIM(MANDT) AS SLRes1
+	,TRIM([VKORG]) AS SLRes2
+	--,'' AS SLRes3
+	,'1900-01-01' AS AccountingDate
+	--,'' AS AgingPeriod
+	--,'' AS AgingSort
+	--,'' AS VATCodeDesc
+	--,'' AS LinkToOriginalInvoice
+FROM 
+	stage.SKS_FI_SalesLedger AS SL
+WHERE VKORG NOT IN ('FI00','SE10')
+GO
